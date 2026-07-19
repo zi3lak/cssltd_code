@@ -11,7 +11,8 @@ test("prints the local IPv6 URL for wildcard binds", async () => {
     [
       process.execPath,
       "--conditions=browser",
-      "--preload=@opentui/solid/preload",
+      // resolve against the repo — cwd is a tmpdir with no node_modules above it
+      `--preload=${Bun.resolveSync("@opentui/solid/preload", root)}`,
       entry,
       "serve",
       "--hostname",

@@ -3,6 +3,10 @@
   Internal AI coding agent for CSSLTD engineers — terminal UI (TUI) + HTTP server.
 </p>
 
+<p align="center">
+  <img src="docs/screenshot.png" alt="CSSLTD Code TUI — welcome screen with a locally detected Ollama model" width="800"/>
+</p>
+
 ---
 
 ## What is CSSLTD Code
@@ -97,6 +101,16 @@ bun turbo typecheck   # type-check the whole monorepo
 bun lint              # oxlint
 cd packages/cssltdcode && bun run test   # CLI tests
 ```
+
+### Test status
+
+Latest full verification of `main` (2026-07-20):
+
+| Check | Result |
+|---|---|
+| CLI test suite (`bun run test`) | ✅ 587 / 587 test files passing (0 flaky) |
+| Type check (`bun turbo typecheck`) | ✅ 17 / 17 packages |
+| Lint (`oxlint`) | ✅ 0 errors |
 
 ## License
 

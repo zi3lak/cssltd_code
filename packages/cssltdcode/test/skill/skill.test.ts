@@ -194,12 +194,11 @@ Just some content without YAML frontmatter.
     provideTmpdirInstance(
       (dir) =>
         Effect.gen(function* () {
-          // cssltdcode_change start - load .cssltd skills without falling back to .cssltdcode
+          // cssltdcode_change start - .cssltd is the canonical project config directory
           yield* Effect.promise(() =>
-            Promise.all([
-              Bun.write(
-                path.join(dir, ".cssltd", "skill", "manual-skill", "SKILL.md"),
-                `---
+            Bun.write(
+              path.join(dir, ".cssltd", "skill", "manual-skill", "SKILL.md"),
+              `---
 name: manual-skill
 ---
 
@@ -207,16 +206,7 @@ name: manual-skill
 
 Instructions here.
 `,
-              ),
-              Bun.write(
-                path.join(dir, ".cssltdcode", "skill", "ignored-skill", "SKILL.md"),
-                `---
-name: ignored-skill
-description: This skill must not load.
----
-`,
-              ),
-            ]),
+            ),
           )
           // cssltdcode_change end
 

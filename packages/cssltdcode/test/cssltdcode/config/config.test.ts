@@ -548,7 +548,7 @@ describe("agent config", () => {
 })
 
 describe("project config directory precedence", () => {
-  test("prefers .cssltd over legacy .cssltdcode and ignores .cssltdcode", async () => {
+  test("prefers .cssltd over legacy .cssltdcode while merging both", async () => {
     await using tmp = await tmpdir()
     const entries = [
       {
@@ -558,15 +558,6 @@ describe("project config directory precedence", () => {
           username: "cssltdcode",
           model: "test/cssltdcode",
           small_model: "test/cssltdcode",
-        },
-        names: ["shared", "legacy", "cssltdcode-only"],
-      },
-      {
-        root: ".cssltdcode",
-        source: "cssltdcode",
-        config: {
-          username: "cssltdcode",
-          model: "test/cssltdcode",
         },
         names: ["shared", "legacy"],
       },
@@ -606,7 +597,7 @@ describe("project config directory precedence", () => {
 
         expect(config.username).toBe("cssltd")
         expect(config.model).toBe("test/cssltdcode")
-        expect(config.small_model).toBeUndefined()
+        expect(config.small_model).toBe("test/cssltdcode")
 
         expect(config.command?.shared).toMatchObject({
           description: "cssltd command",
@@ -616,7 +607,6 @@ describe("project config directory precedence", () => {
           description: "cssltdcode command",
           template: "cssltdcode command template",
         })
-        expect(config.command?.["cssltdcode-only"]).toBeUndefined()
 
         expect(config.agent?.shared).toMatchObject({
           description: "cssltd agent",
@@ -626,12 +616,10 @@ describe("project config directory precedence", () => {
           description: "cssltdcode agent",
           prompt: "cssltdcode agent prompt",
         })
-        expect(config.agent?.["cssltdcode-only"]).toBeUndefined()
 
         const plugins = JSON.stringify(config.plugin)
         expect(plugins).toContain("cssltdcode.ts")
         expect(plugins).toContain("cssltd.ts")
-        expect(plugins).not.toContain("cssltdcode.ts")
       },
     })
   })

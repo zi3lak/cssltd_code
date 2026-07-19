@@ -27,14 +27,14 @@ describe("cssltdcode logo", () => {
   })
 
   test("uses modern and fallback logo variants", () => {
-    expect(tui({ CSSLTD_UNICODE_LOGO: "1" }, "linux").join("\n")).toContain("🬺🬏")
-    expect(tui({}, "win32").join("\n")).not.toContain("🬺🬏")
-    expect(plain({}, "win32").join("\n")).not.toContain("🬁🬬")
+    expect(tui({ CSSLTD_UNICODE_LOGO: "1" }, "linux").join("\n")).toContain("▀▄▄▄▀")
+    expect(tui({}, "win32").join("\n")).not.toContain("▀▄▄▄▀")
+    expect(plain({}, "win32").join("\n")).not.toContain("▀▄▄▄▀")
   })
 
   test("formats child session exit logo", () => {
     const out = session("Title", "ses_test", "<dim>", "<reset>", {}, "win32")
     expect(out).toContain("<dim>Title<reset>")
-    expect(out).not.toContain("🬺🬏")
+    expect(out).not.toContain("▀▄▄▄▀")
   })
 })

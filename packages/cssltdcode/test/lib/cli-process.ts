@@ -30,7 +30,11 @@ import { it } from "./effect"
 
 const cssltdcodeRoot = path.resolve(import.meta.dir, "../../")
 const cliEntry = path.join(cssltdcodeRoot, "src/index.ts")
-const cliArgs = ["run", "--conditions=browser", "--preload=@opentui/solid/preload", cliEntry] // cssltdcode_change
+// cssltdcode_change start - resolve the preload against the repo so spawns with cwd
+// outside the workspace (the isolated tmp home) still find @opentui/solid.
+const solidPreload = Bun.resolveSync("@opentui/solid/preload", cssltdcodeRoot)
+const cliArgs = ["run", "--conditions=browser", `--preload=${solidPreload}`, cliEntry]
+// cssltdcode_change end
 
 export const testModelID = "test/test-model"
 
