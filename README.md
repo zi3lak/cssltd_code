@@ -1,51 +1,52 @@
 <p align="center">
   <b>CSSLTD Code</b><br/>
-  Wewnętrzny agent AI do pracy z kodem dla inżynierów CSSLTD — terminal (TUI) + serwer HTTP.
+  Internal AI coding agent for CSSLTD engineers — terminal UI (TUI) + HTTP server.
 </p>
 
 ---
 
-## Czym jest CSSLTD Code
+## What is CSSLTD Code
 
-CSSLTD Code to firmowe narzędzie do programowania z pomocą AI: agent, który czyta i edytuje kod,
-uruchamia polecenia, pracuje na gałęziach git i prowadzi całe zadania inżynierskie w terminalu.
-Działa z **płatnymi API** (Anthropic, OpenAI, OpenRouter, Google, Mistral i ~30 innych dostawców)
-oraz z **lokalnymi modelami przez Ollama** — bez wysyłania kodu poza firmę.
+CSSLTD Code is the company's AI-assisted development tool: an agent that reads and edits code,
+runs commands, works on git branches, and drives complete engineering tasks from the terminal.
+It works with **paid provider APIs** (Anthropic, OpenAI, OpenRouter, Google, Mistral, and ~30 other
+providers) as well as **local models via Ollama** — without sending any code outside the company.
 
-Najważniejsze zasady:
+Core principles:
 
-- **Zero telemetrii domyślnie.** Żadne dane nie opuszczają maszyny. Opcjonalną analitykę firmową
-  włącza się dopiero przez `CSSLTD_TELEMETRY_HOST` + `CSSLTD_TELEMETRY_KEY`.
-- **Brak logowania do cudzej chmury.** Firmowa brama modeli (gateway) jest opt-in przez
-  `CSSLTD_API_URL` / `CSSLTD_API_KEY`; bez niej każdy inżynier używa własnych kluczy API lub Ollamy.
-- **Lokalna Ollama wykrywana automatycznie.** Jeśli działa serwer Ollama
-  (`http://localhost:11434`, konfigurowalne przez `CSSLTD_OLLAMA_URL` lub `OLLAMA_HOST`),
-  wszystkie zainstalowane modele pojawiają się w liście modeli bez żadnej konfiguracji.
+- **Zero telemetry by default.** No data leaves the machine. Optional company analytics are only
+  enabled via `CSSLTD_TELEMETRY_HOST` + `CSSLTD_TELEMETRY_KEY`.
+- **No third-party cloud login.** The company model gateway is opt-in via
+  `CSSLTD_API_URL` / `CSSLTD_API_KEY`; without it, each engineer uses their own API keys or Ollama.
+- **Local Ollama is auto-detected.** If an Ollama server is running
+  (`http://localhost:11434`, configurable via `CSSLTD_OLLAMA_URL` or `OLLAMA_HOST`),
+  all installed models appear in the model list with no configuration required.
 
-## Szybki start
+## Quick start
 
-Wymagania: [bun](https://bun.sh) `1.3.x`.
+Requirements: [bun](https://bun.sh) `1.3.x`.
 
 ```bash
-bun install          # instalacja zależności monorepo
-bun dev              # uruchomienie TUI w bieżącym katalogu
+bun install          # install monorepo dependencies
+bun dev              # launch the TUI in the current directory
 ```
 
-Budowa binarki dystrybucyjnej:
+Building the distributable binary:
 
 ```bash
 cd packages/cssltdcode
-bun run build        # artefakty w dist/
+bun run build        # artifacts in dist/
 ```
 
-Po zainstalowaniu paczki dostępne są polecenia: `cssltd`, `cssltd_code`, `cssltdcode` (aliasy).
+Once the package is installed, the following commands are available: `cssltd`, `cssltd_code`,
+`cssltdcode` (aliases).
 
-## Podpięcie modeli
+## Connecting models
 
-### Płatne API (klucze osobiste lub firmowe)
+### Paid APIs (personal or company keys)
 
-W TUI wpisz `/connect` i wybierz dostawcę, albo ustaw zmienną środowiskową — provider włącza się
-automatycznie:
+In the TUI, type `/connect` and pick a provider, or set an environment variable — the provider is
+enabled automatically:
 
 ```bash
 export ANTHROPIC_API_KEY=sk-ant-...
@@ -53,63 +54,52 @@ export OPENAI_API_KEY=sk-...
 export OPENROUTER_API_KEY=sk-or-...
 ```
 
-### Lokalna Ollama
+### Local Ollama
 
 ```bash
-ollama serve                 # jeśli jeszcze nie działa
-ollama pull qwen2.5-coder    # dowolny model
-cssltd                       # modele widoczne od razu w /models
+ollama serve                 # if not already running
+ollama pull qwen2.5-coder    # any model
+cssltd                       # models show up immediately in /models
 ```
 
-Niestandardowy adres: `export CSSLTD_OLLAMA_URL=http://192.168.1.50:11434`.
+Custom address: `export CSSLTD_OLLAMA_URL=http://192.168.1.50:11434`.
 
-### Firmowa brama (opcjonalnie)
+### Company gateway (optional)
 
 ```bash
 export CSSLTD_API_URL=https://gateway.cssltd.internal
-export CSSLTD_API_KEY=...        # token wydany przez administratora
+export CSSLTD_API_KEY=...        # token issued by an administrator
 ```
 
-## Konfiguracja
+## Configuration
 
-- Projekt: `cssltd.json` / `cssltd.jsonc` lub katalog `.cssltdcode/` w repo.
-- Globalnie: `CSSLTD_CONFIG` (ścieżka pliku), `CSSLTD_CONFIG_DIR` (katalog dodatkowy).
-- Motyw: domyślny motyw `cssltd` (granat + stalowy błękit + bursztyn); zmiana w `/theme`.
+- Per project: `cssltd.json` / `cssltd.jsonc` or a `.cssltdcode/` directory in the repo.
+- Globally: `CSSLTD_CONFIG` (config file path), `CSSLTD_CONFIG_DIR` (additional config directory).
+- Theme: the default `cssltd` theme (navy + steel blue + amber); change it with `/theme`.
 
-## Struktura monorepo
+## Monorepo layout
 
-| Pakiet | Rola |
+| Package | Role |
 |---|---|
-| `packages/cssltdcode` | CLI/TUI — główny produkt (`@cssltdcode/cli`) |
-| `packages/core` | rdzeń agenta: sesje, narzędzia, provider/katalog modeli |
-| `packages/tui`, `packages/ui` | warstwa interfejsu terminalowego |
-| `packages/server`, `packages/sdk` | serwer HTTP API + SDK klienckie |
-| `packages/cssltd-gateway` | integracja z firmową bramą modeli (opt-in) |
-| `packages/cssltd-indexing` | indeksowanie kodu / embeddingi (w tym Ollama) |
-| `packages/cssltd-telemetry` | analityka — **domyślnie martwa**, opt-in |
-| `packages/llm`, `packages/plugin` | adaptery modeli i system pluginów |
+| `packages/cssltdcode` | CLI/TUI — the main product (`@cssltdcode/cli`) |
+| `packages/core` | agent core: sessions, tools, provider/model catalog |
+| `packages/tui`, `packages/ui` | terminal interface layer |
+| `packages/server`, `packages/sdk` | HTTP API server + client SDKs |
+| `packages/cssltd-gateway` | company model gateway integration (opt-in) |
+| `packages/cssltd-indexing` | code indexing / embeddings (including Ollama) |
+| `packages/cssltd-telemetry` | analytics — **dead by default**, opt-in |
+| `packages/llm`, `packages/plugin` | model adapters and the plugin system |
 
-## Rozwój
+## Development
 
 ```bash
-bun turbo typecheck   # typy w całym monorepo
+bun turbo typecheck   # type-check the whole monorepo
 bun lint              # oxlint
-cd packages/cssltdcode && bun run test   # testy CLI
+cd packages/cssltdcode && bun run test   # CLI tests
 ```
 
----
+## License
 
-## English summary
-
-CSSLTD Code is CSSLTD's internal AI coding agent (terminal TUI + HTTP server). It works with paid
-provider APIs (Anthropic, OpenAI, OpenRouter, and ~30 more) and with local models via Ollama, which
-is auto-detected at `localhost:11434`. Telemetry is disabled by default and there is no third-party
-cloud login; an optional company gateway can be enabled via `CSSLTD_API_URL`. Build with `bun
-install && bun dev`; the distributable CLI lives in `packages/cssltdcode` (binaries `cssltd`,
-`cssltd_code`).
-
-## Licencja
-
-MIT — patrz [LICENSE](LICENSE) oraz [NOTICE.md](NOTICE.md). Projekt zawiera kod wywodzący się
-z otwartych projektów Kilo Code i opencode (licencja MIT); wymagane notki o prawach autorskich
-zachowano w pliku LICENSE.
+MIT — see [LICENSE](LICENSE) and [NOTICE.md](NOTICE.md). The project contains code derived from
+the open-source Kilo Code and opencode projects (MIT-licensed); the required copyright notices are
+preserved in the LICENSE file.

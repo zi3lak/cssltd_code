@@ -1,17 +1,17 @@
 # NOTICE
 
-CSSLTD Code — © 2026 CSSLTD. Wszystkie prawa do brandingu, nazw i grafik CSSLTD zastrzeżone.
+CSSLTD Code — © 2026 CSSLTD. All rights to CSSLTD branding, names, and artwork reserved.
 
-Ten produkt zawiera oprogramowanie wywodzące się z projektów open source na licencji MIT:
+This product contains software derived from MIT-licensed open-source projects:
 
 - **Kilo Code** — Copyright (c) 2026 Kilo Code (https://github.com/Kilo-Org/kilocode)
 - **opencode** — Copyright (c) 2025 opencode (https://github.com/sst/opencode)
 
-Pełny tekst licencji MIT wraz z wymaganymi notami o prawach autorskich znajduje się w pliku
-[LICENSE](LICENSE). Usunięcie tych not naruszałoby warunki licencji MIT — muszą pozostać
-w każdej dystrybucji tego oprogramowania.
+The full text of the MIT license, together with the required copyright notices, can be found in
+the [LICENSE](LICENSE) file. Removing these notices would violate the terms of the MIT license —
+they must remain in every distribution of this software.
 
-Zależności zewnętrzne (npm) zachowują swoje oryginalne licencje i nazwy pakietów
-(m.in. `@opencode-ai/plugin`, `@opencode-ai/sdk`, `opencode-poe-auth`,
-`@gitlab/opencode-gitlab-auth`) — są to identyfikatory wymagane do działania instalacji,
-a nie elementy brandingu produktu.
+External (npm) dependencies retain their original licenses and package names
+(including `@opencode-ai/plugin`, `@opencode-ai/sdk`, `opencode-poe-auth`,
+`@gitlab/opencode-gitlab-auth`) — these are identifiers required for the installation to work,
+not elements of the product's branding.
