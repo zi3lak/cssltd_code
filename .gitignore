@@ -71,3 +71,4 @@ tsconfig.tsbuildinfo
 packages/app/.artifacts/
 packages/cssltdcode/.artifacts/
 .claude/settings.local.json
+.claude/settings.local.json.tmp.*
