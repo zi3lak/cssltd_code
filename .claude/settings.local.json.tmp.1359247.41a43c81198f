@@ -18,7 +18,23 @@
       "Bash(python3 -c \"import json,sys; d=json.load\\(sys.stdin\\); print\\('ollama' in d\\); print\\([k for k in d if 'llama' in k or 'local' in k][:10]\\)\")",
       "Bash(rm -rf kilocode-main)",
       "Bash(rm -rf /tmp/claude-1000/-home-cssltd-cssltd-code/62973d0b-ddbf-4188-8387-9179f15133dd/scratchpad/kilo-src)",
-      "Bash(git add *)"
+      "Bash(git add *)",
+      "Bash(git -c user.name=CSSLTD -c user.email=dev@cssltd.internal commit -q -m 'CSSLTD Code 1.0.0 — wewnetrzne narzedzie AI dla inzynierow CSSLTD *)",
+      "Bash(git count-objects *)",
+      "Bash(./dist/@cssltdcode/cli-linux-x64/bin/cssltd --version)",
+      "Bash(./dist/@cssltdcode/cli-linux-x64/bin/cssltd --help)",
+      "Skill(run)",
+      "Read(//home/cssltd/.bun/bin/**)",
+      "Read(//home/cssltd/.local/bin/**)",
+      "Bash(tmux kill-session *)",
+      "Bash(tmux new-session *)",
+      "Bash(tmux capture-pane *)",
+      "Bash(tmux send-keys *)",
+      "Bash(grep -v '^\\\\s*$')",
+      "Bash(tmux list-sessions *)",
+      "Bash(gh auth *)",
+      "Bash(gh repo *)",
+      "Bash(git commit -m 'Remove stray temporary settings file *)"
     ]
   }
 }
