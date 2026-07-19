@@ -1,0 +1,236 @@
+import { Agent } from "@/agent/agent"
+import { CssltdSessionPrompt } from "@/cssltdcode/session/prompt" // cssltdcode_change
+import { MemoryMarker } from "@/cssltdcode/memory/marker" // cssltdcode_change
+import { SessionV1 } from "@cssltdcode/core/v1/session"
+import { Provider } from "@/provider/provider"
+import { ProviderTransform } from "@/provider/transform"
+import { MCP } from "@/mcp"
+import { Permission } from "@/permission"
+import { Tool } from "@/tool/tool"
+import { ToolJsonSchema } from "@/tool/json-schema"
+import { ToolRegistry } from "@/tool/registry"
+import { Truncate } from "@/tool/truncate"
+
+import { Plugin } from "@/plugin"
+import type { TaskPromptOps } from "@/tool/task"
+import { type Tool as AITool, tool, jsonSchema, type ToolExecutionOptions, asSchema } from "ai"
+import { Effect } from "effect"
+import { MessageV2 } from "./message-v2"
+import { Session } from "./session"
+import { SessionProcessor } from "./processor"
+import { PartID } from "./schema"
+import { EffectBridge } from "@/effect/bridge"
+import * as SandboxPolicy from "@/cssltdcode/sandbox/policy" // cssltdcode_change
+import { ProviderV2 } from "@cssltdcode/core/provider"
+import { ModelV2 } from "@cssltdcode/core/model"
+// cssltdcode_change start
+import { SwePruner } from "@/cssltdcode/swe-pruner"
+import { Config } from "@/config/config"
+// cssltdcode_change end
+
+export const resolve = Effect.fn("SessionTools.resolve")(function* (input: {
+  agent: Agent.Info
+  model: Provider.Model
+  session: Session.Info
+  processor: Pick<SessionProcessor.Handle, "message" | "metadata" | "completeToolCall"> // cssltdcode_change
+  bypassAgentCheck: boolean
+  messages: SessionV1.WithParts[]
+  promptOps: TaskPromptOps
+  memoryCache: MemoryMarker.Cache // cssltdcode_change
+}) {
+  const tools: Record<string, AITool> = {}
+  const run = yield* EffectBridge.make()
+  const plugin = yield* Plugin.Service
+  const permission = yield* Permission.Service
+  // cssltdcode_change start
+  const agents = yield* Agent.Service
+  const sessions = yield* Session.Service
+  // cssltdcode_change end
+  const registry = yield* ToolRegistry.Service
+  const mcp = yield* MCP.Service
+  const truncate = yield* Truncate.Service
+  // cssltdcode_change start - SWE-Pruner (experimental)
+  const config = yield* Config.Service
+  const swe = SwePruner.enabled(yield* config.get())
+  // cssltdcode_change end
+
+  const context = (args: Record<string, unknown>, options: ToolExecutionOptions): Tool.Context => ({
+    sessionID: input.session.id,
+    abort: options.abortSignal!,
+    messageID: input.processor.message.id,
+    callID: options.toolCallId,
+    extra: { model: input.model, bypassAgentCheck: input.bypassAgentCheck, promptOps: input.promptOps },
+    agent: input.agent.name,
+    messages: input.messages,
+    // cssltdcode_change start
+    metadata: (val) => input.processor.metadata(options.toolCallId, val),
+    ask: (req) =>
+      CssltdSessionPrompt.askPermission({
+        permission,
+        agents,
+        sessions,
+        agent: input.agent,
+        session: input.session,
+        request: {
+          ...req,
+          sessionID: input.session.id,
+          tool: { messageID: input.processor.message.id, callID: options.toolCallId },
+        },
+      }).pipe(Effect.orDie),
+  })
+  // cssltdcode_change end
+
+  for (const item of yield* registry.tools({
+    modelID: ModelV2.ID.make(input.model.api.id),
+    providerID: input.model.providerID,
+    family: input.model.family, // cssltdcode_change
+    agent: input.agent,
+  })) {
+    // cssltdcode_change start - SWE-Pruner (experimental): advertise the focus parameter on prunable tools
+    const pruner = swe && SwePruner.prunable(item.id)
+    const base = ToolJsonSchema.fromTool(item)
+    const schema = ProviderTransform.schema(input.model, pruner ? SwePruner.extend(base) : base)
+    // cssltdcode_change end
+    tools[item.id] = tool({
+      description: item.description,
+      inputSchema: jsonSchema(schema),
+      execute(args, options) {
+        return run.promise(
+          Effect.gen(function* () {
+            const ctx = context(args, options)
+            yield* plugin.trigger(
+              "tool.execute.before",
+              { tool: item.id, sessionID: ctx.sessionID, callID: ctx.callID },
+              { args },
+            )
+            // cssltdcode_change start
+            let result = yield* SandboxPolicy.executeTool(ctx.sessionID, item, item.execute(args, ctx))
+            // SWE-Pruner (experimental): prune the output when the model provided a focus question.
+            // Runs before tool.execute.after so plugins observe the final output the model will
+            // see; pruning is signalled to them via metadata.swePruner.
+            if (pruner) result = yield* SwePruner.sweep({ tool: item.id, args, result, abort: ctx.abort })
+            // cssltdcode_change end
+            const output = {
+              ...result,
+              attachments: result.attachments?.map((attachment) => ({
+                ...attachment,
+                id: PartID.ascending(),
+                sessionID: ctx.sessionID,
+                messageID: input.processor.message.id,
+              })),
+            }
+            // cssltdcode_change - mark successful targeted memory recalls for the assistant badge
+            if (item.id === "cssltd_memory_recall") MemoryMarker.recall({ result: output, cache: input.memoryCache }) // cssltdcode_change
+            yield* plugin.trigger(
+              "tool.execute.after",
+              { tool: item.id, sessionID: ctx.sessionID, callID: ctx.callID, args },
+              output,
+            )
+            if (options.abortSignal?.aborted) {
+              yield* input.processor.completeToolCall(options.toolCallId, output)
+            }
+            return output
+          }),
+        )
+      },
+    })
+  }
+
+  const mcpTools = (yield* SandboxPolicy.networkRestricted(input.session.id)) ? {} : yield* mcp.tools() // cssltdcode_change
+  for (const [key, item] of Object.entries(mcpTools)) { // cssltdcode_change
+    const execute = item.execute
+    if (!execute) continue
+
+    const schema = yield* Effect.promise(() => Promise.resolve(asSchema(item.inputSchema).jsonSchema))
+    const transformed = ProviderTransform.schema(input.model, schema)
+    item.inputSchema = jsonSchema(transformed)
+    item.execute = (args, opts) =>
+      run.promise(
+        Effect.gen(function* () {
+          const ctx = context(args, opts)
+          yield* plugin.trigger(
+            "tool.execute.before",
+            { tool: key, sessionID: ctx.sessionID, callID: opts.toolCallId },
+            { args },
+          )
+          // cssltdcode_change start
+          const result: Awaited<ReturnType<NonNullable<typeof execute>>> = yield* SandboxPolicy.executeMcp(
+            ctx.sessionID,
+            item,
+            Effect.gen(function* () {
+              yield* ctx.ask({ permission: key, metadata: {}, patterns: ["*"], always: ["*"] })
+              return yield* Effect.promise(() => execute(args, opts))
+            }),
+          ).pipe(
+            // cssltdcode_change end
+            Effect.withSpan("Tool.execute", {
+              attributes: {
+                "tool.name": key,
+                "tool.call_id": opts.toolCallId,
+                "session.id": ctx.sessionID,
+                "message.id": input.processor.message.id,
+              },
+            }),
+          )
+          yield* plugin.trigger(
+            "tool.execute.after",
+            { tool: key, sessionID: ctx.sessionID, callID: opts.toolCallId, args },
+            result,
+          )
+
+          const textParts: string[] = []
+          const attachments: Omit<SessionV1.FilePart, "id" | "sessionID" | "messageID">[] = []
+          for (const contentItem of result.content) {
+            if (contentItem.type === "text") textParts.push(contentItem.text)
+            else if (contentItem.type === "image") {
+              attachments.push({
+                type: "file",
+                mime: contentItem.mimeType,
+                url: `data:${contentItem.mimeType};base64,${contentItem.data}`,
+              })
+            } else if (contentItem.type === "resource") {
+              const { resource } = contentItem
+              if (resource.text) textParts.push(resource.text)
+              if (resource.blob) {
+                attachments.push({
+                  type: "file",
+                  mime: resource.mimeType ?? "application/octet-stream",
+                  url: `data:${resource.mimeType ?? "application/octet-stream"};base64,${resource.blob}`,
+                  filename: resource.uri,
+                })
+              }
+            }
+          }
+
+          const truncated = yield* truncate.output(textParts.join("\n\n"), {}, input.agent)
+          const metadata = {
+            ...result.metadata,
+            truncated: truncated.truncated,
+            ...(truncated.truncated && { outputPath: truncated.outputPath }),
+          }
+
+          const output = {
+            title: "",
+            metadata,
+            output: truncated.content,
+            attachments: attachments.map((attachment) => ({
+              ...attachment,
+              id: PartID.ascending(),
+              sessionID: ctx.sessionID,
+              messageID: input.processor.message.id,
+            })),
+            content: result.content,
+          }
+          if (opts.abortSignal?.aborted) {
+            yield* input.processor.completeToolCall(opts.toolCallId, output)
+          }
+          return output
+        }),
+      )
+    tools[key] = item
+  }
+
+  return tools
+})
+
+export * as SessionTools from "./tools"

@@ -1,0 +1,63 @@
+export * as SessionStore from "./store"
+
+import { and, eq, isNotNull } from "drizzle-orm" // cssltdcode_change
+import { Context, Effect, Layer, Schema } from "effect"
+import { Database } from "../database/database"
+import { SessionHistory } from "./history"
+import { MessageDecodeError } from "./error"
+import { SessionMessage } from "./message"
+import { SessionSchema } from "./schema"
+import { SessionMessageTable, SessionTable } from "./sql"
+import { fromRow } from "./info"
+import { normalize } from "../cssltdcode/session-message" // cssltdcode_change
+
+export interface Interface {
+  readonly get: (sessionID: SessionSchema.ID) => Effect.Effect<SessionSchema.Info | undefined>
+  readonly context: (sessionID: SessionSchema.ID) => Effect.Effect<SessionMessage.Message[], MessageDecodeError>
+  readonly runnerContext: (
+    sessionID: SessionSchema.ID,
+    baselineSeq: number,
+  ) => Effect.Effect<SessionMessage.Message[], MessageDecodeError>
+  readonly message: (
+    messageID: SessionMessage.ID,
+  ) => Effect.Effect<{ readonly sessionID: SessionSchema.ID; readonly message: SessionMessage.Message } | undefined>
+}
+
+export class Service extends Context.Service<Service, Interface>()("@cssltdcode/v2/SessionStore") {}
+
+export const layer = Layer.effect(
+  Service,
+  Effect.gen(function* () {
+    const { db } = yield* Database.Service
+    const decodeMessage = Schema.decodeUnknownEffect(SessionMessage.Message)
+
+    return Service.of({
+      get: Effect.fn("SessionStore.get")(function* (sessionID) {
+        const row = yield* db.select().from(SessionTable).where(eq(SessionTable.id, sessionID)).get().pipe(Effect.orDie)
+        return row ? fromRow(row) : undefined
+      }),
+      context: Effect.fn("SessionStore.context")(function* (sessionID) {
+        return yield* SessionHistory.load(db, sessionID)
+      }),
+      runnerContext: Effect.fn("SessionStore.runnerContext")(function* (sessionID, baselineSeq) {
+        return yield* SessionHistory.loadForRunner(db, sessionID, baselineSeq)
+      }),
+      message: Effect.fn("SessionStore.message")(function* (messageID) {
+        const row = yield* db
+          .select()
+          .from(SessionMessageTable)
+          .where(and(eq(SessionMessageTable.id, messageID), isNotNull(SessionMessageTable.seq))) // cssltdcode_change
+          .get()
+          .pipe(Effect.orDie)
+        return row
+          ? {
+              sessionID: SessionSchema.ID.make(row.session_id),
+              message: yield* decodeMessage(normalize({ ...row.data, id: row.id, type: row.type })).pipe(Effect.orDie), // cssltdcode_change - normalize legacy tool content at the database boundary
+            }
+          : undefined
+      }),
+    })
+  }),
+)
+
+export const defaultLayer = layer.pipe(Layer.provide(Database.defaultLayer))

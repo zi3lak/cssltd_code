@@ -1,0 +1,111 @@
+// cssltdcode_change start - Tests for CSSLTD_CONFIG_CONTENT merging
+import { describe, test, expect, beforeEach, afterEach } from "bun:test"
+import { buildConfigEnv } from "../src/server"
+
+describe("buildConfigEnv", () => {
+  const originalEnv = process.env.CSSLTD_CONFIG_CONTENT
+
+  beforeEach(() => {
+    delete process.env.CSSLTD_CONFIG_CONTENT
+  })
+
+  afterEach(() => {
+    if (originalEnv === undefined) {
+      delete process.env.CSSLTD_CONFIG_CONTENT
+    } else {
+      process.env.CSSLTD_CONFIG_CONTENT = originalEnv
+    }
+  })
+
+  test("returns empty config when no existing env and no incoming config", () => {
+    const result = buildConfigEnv()
+    const parsed = JSON.parse(result)
+
+    expect(parsed).toEqual({
+      agent: {},
+      command: {},
+      mcp: {},
+      mode: {},
+      plugin: [],
+      instructions: [],
+    })
+  })
+
+  test("returns incoming config when no existing env", () => {
+    const result = buildConfigEnv({
+      agent: { custom: { mode: "primary", prompt: "test" } },
+    })
+    const parsed = JSON.parse(result)
+
+    expect(parsed.agent).toEqual({ custom: { mode: "primary", prompt: "test" } })
+  })
+
+  test("preserves existing CSSLTD_CONFIG_CONTENT when spawning with new config", () => {
+    // Simulate Cssltdcode having injected modes via CSSLTD_CONFIG_CONTENT
+    process.env.CSSLTD_CONFIG_CONTENT = JSON.stringify({
+      agent: {
+        translate: { mode: "primary", prompt: "You are a translator" },
+      },
+      instructions: [".cssltd/rules/main.md"],
+    })
+
+    // Now spawn with additional config
+    const result = buildConfigEnv({
+      agent: { review: { mode: "primary", prompt: "You are a reviewer" } },
+      instructions: ["additional-rule.md"],
+    })
+    const parsed = JSON.parse(result)
+
+    // Both agents should be present
+    expect(parsed.agent.translate).toEqual({ mode: "primary", prompt: "You are a translator" })
+    expect(parsed.agent.review).toEqual({ mode: "primary", prompt: "You are a reviewer" })
+
+    // Both instructions should be present
+    expect(parsed.instructions).toContain(".cssltd/rules/main.md")
+    expect(parsed.instructions).toContain("additional-rule.md")
+  })
+
+  test("incoming config overrides existing config for same keys", () => {
+    process.env.CSSLTD_CONFIG_CONTENT = JSON.stringify({
+      agent: { code: { mode: "primary", prompt: "Original prompt" } },
+      model: "original-model",
+    })
+
+    const result = buildConfigEnv({
+      agent: { code: { mode: "primary", prompt: "New prompt" } },
+      model: "new-model",
+    })
+    const parsed = JSON.parse(result)
+
+    // Agent should be overridden
+    expect(parsed.agent.code.prompt).toBe("New prompt")
+    // Top-level config should be overridden
+    expect(parsed.model).toBe("new-model")
+  })
+
+  test("handles invalid JSON in existing CSSLTD_CONFIG_CONTENT gracefully", () => {
+    process.env.CSSLTD_CONFIG_CONTENT = "invalid json {"
+
+    const result = buildConfigEnv({
+      agent: { test: { mode: "primary", prompt: "test" } },
+    })
+    const parsed = JSON.parse(result)
+
+    // Should still work with just the incoming config
+    expect(parsed.agent.test).toEqual({ mode: "primary", prompt: "test" })
+  })
+
+  test("merges plugins from both sources", () => {
+    process.env.CSSLTD_CONFIG_CONTENT = JSON.stringify({
+      plugin: ["plugin-a", "plugin-b"],
+    })
+
+    const result = buildConfigEnv({
+      plugin: ["plugin-c"],
+    })
+    const parsed = JSON.parse(result)
+
+    expect(parsed.plugin).toEqual(["plugin-a", "plugin-b", "plugin-c"])
+  })
+})
+// cssltdcode_change end

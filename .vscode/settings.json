@@ -1,0 +1,15 @@
+{
+  "[mdx]": {
+    "editor.formatOnSave": false,
+    "editor.defaultFormatter": null
+  },
+  "files.exclude": {
+    "packages/cssltd-vscode/out": false,
+    "packages/cssltd-vscode/dist": false
+  },
+  "search.exclude": {
+    "packages/cssltd-vscode/out": true,
+    "packages/cssltd-vscode/dist": true
+  },
+  "typescript.tsc.autoDetect": "off"
+}

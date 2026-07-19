@@ -1,0 +1,36 @@
+id = "cssltd"
+name = "Cssltd"
+description = "The open source coding agent."
+version = "7.4.11"
+schema_version = 1
+authors = ["Anomaly"]
+repository = "https://github.com/Cssltd-Org/cssltdcode"
+
+[agent_servers.cssltdcode]
+name = "Cssltd"
+icon = "./icons/cssltdcode.svg"
+
+[agent_servers.cssltdcode.targets.darwin-aarch64]
+archive = "https://github.com/Cssltd-Org/cssltdcode/releases/download/v7.4.11/cssltdcode-darwin-arm64.zip"
+cmd = "./cssltdcode"
+args = ["acp"]
+
+[agent_servers.cssltdcode.targets.darwin-x86_64]
+archive = "https://github.com/Cssltd-Org/cssltdcode/releases/download/v7.4.11/cssltdcode-darwin-x64.zip"
+cmd = "./cssltdcode"
+args = ["acp"]
+
+[agent_servers.cssltdcode.targets.linux-aarch64]
+archive = "https://github.com/Cssltd-Org/cssltdcode/releases/download/v7.4.11/cssltdcode-linux-arm64.tar.gz"
+cmd = "./cssltdcode"
+args = ["acp"]
+
+[agent_servers.cssltdcode.targets.linux-x86_64]
+archive = "https://github.com/Cssltd-Org/cssltdcode/releases/download/v7.4.11/cssltdcode-linux-x64.tar.gz"
+cmd = "./cssltdcode"
+args = ["acp"]
+
+[agent_servers.cssltdcode.targets.windows-x86_64]
+archive = "https://github.com/Cssltd-Org/cssltdcode/releases/download/v7.4.11/cssltdcode-windows-x64.zip"
+cmd = "./cssltdcode.exe"
+args = ["acp"]

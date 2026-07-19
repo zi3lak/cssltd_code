@@ -1,0 +1,45 @@
+{
+  "$schema": "https://v2-8-13.turborepo.dev/schema.json",
+  "globalEnv": ["CI", "CSSLTD_DISABLE_SHARE"],
+  "globalPassThroughEnv": ["CI", "CSSLTD_DISABLE_SHARE"],
+  "tasks": {
+    "typecheck": {
+      "dependsOn": ["^typecheck"]
+    },
+    "build": {
+      "dependsOn": [],
+      "outputs": ["dist/**"]
+    },
+    "@cssltdcode/cli#build": {
+      "dependsOn": ["@cssltdcode/sdk#build"],
+      "outputs": ["dist/**"]
+    },
+    "@cssltdcode/cli#test": {
+      "dependsOn": ["^build"],
+      "outputs": [],
+      "passThroughEnv": ["*"]
+    },
+    "test:ci": {
+      "outputs": [".artifacts/unit/junit.xml"],
+      "passThroughEnv": ["*"]
+    },
+    "@cssltdcode/cli#test:ci": {
+      "dependsOn": ["^build"],
+      "env": ["CSSLTD_TEST_PROFILE", "CSSLTD_TEST_SHARD"],
+      "outputs": [".artifacts/unit/junit.xml"],
+      "passThroughEnv": ["*"]
+    },
+    "@cssltdcode/cssltd-gateway#test:ci": {
+      "outputs": [".artifacts/unit/junit.xml"]
+    },
+    "@cssltdcode/ui#test": {
+      "dependsOn": ["^build"],
+      "outputs": []
+    },
+    "@cssltdcode/ui#test:ci": {
+      "dependsOn": ["^build"],
+      "outputs": [".artifacts/unit/junit.xml"],
+      "passThroughEnv": ["*"]
+    }
+  }
+}

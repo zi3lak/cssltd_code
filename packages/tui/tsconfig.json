@@ -1,0 +1,17 @@
+{
+  "$schema": "https://json.schemastore.org/tsconfig",
+  "extends": "@tsconfig/bun/tsconfig.json",
+  "compilerOptions": {
+    "jsx": "preserve",
+    "jsxImportSource": "@opentui/solid",
+    "lib": ["ESNext", "DOM", "DOM.Iterable"],
+    "noUncheckedIndexedAccess": false,
+    // cssltdcode_change - resolve Cssltd integrations retained during upstream's standalone TUI extraction
+    "paths": {
+      "@/*": ["../cssltdcode/src/*"],
+      "@tui/*": ["./src/*"]
+    }
+  },
+  // cssltdcode_change - include ambient declarations used by retained Cssltd imports from cssltdcode
+  "include": ["src", "test", "../cssltdcode/src/*.d.ts"]
+}
