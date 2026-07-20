@@ -762,108 +762,124 @@ describe("HttpApi SDK", () => {
     ),
   )
 
+  // cssltdcode_change start - noReply prompts still resolve a default model before persisting
+  // the user message, so these routes need a configured provider even though the LLM is never
+  // actually called; without one, defaultModel() legitimately throws NoProvidersError in the
+  // hermetic test environment (which has no provider credentials at all) and every assertion
+  // below fails with 500 instead of exercising the no-reply route itself.
   serverPathParity("matches generated SDK prompt no-reply routes", (serverPath) =>
-    withStandardProject(serverPath, ({ sdk }) =>
-      Effect.gen(function* () {
-        const session = yield* capture(() => sdk.session.create({ title: "prompt" }))
-        const sessionID = String(record(session.data).id)
-        const prompt = yield* capture(() =>
-          sdk.session.prompt({
-            sessionID,
-            agent: "build",
-            noReply: true,
-            parts: [{ type: "text", text: "hello" }],
-          }),
-        )
-        // cssltdcode_change start
-        const asyncPrompt = yield* capture(() =>
-          sdk.session.promptAsync({
-            sessionID,
-            agent: "build",
-            noReply: true,
-            parts: [{ type: "text", text: "async hello" }],
-          }),
-        )
-        const messages = yield* pollWithTimeout(
-          capture(() => sdk.session.messages({ sessionID })).pipe(
-            Effect.map((messages) => (texts(messages.data).includes("async hello") ? messages : undefined)),
-          ),
-          "async no-reply prompt message was not persisted",
-        )
+    withProject(
+      serverPath,
+      { setup: writeStandardFiles, config: testProviderConfig("http://localhost:1/v1") },
+      ({ sdk }) =>
+        Effect.gen(function* () {
+          const session = yield* capture(() => sdk.session.create({ title: "prompt" }))
+          const sessionID = String(record(session.data).id)
+          const prompt = yield* capture(() =>
+            sdk.session.prompt({
+              sessionID,
+              agent: "build",
+              noReply: true,
+              parts: [{ type: "text", text: "hello" }],
+            }),
+          )
+          // cssltdcode_change start
+          const asyncPrompt = yield* capture(() =>
+            sdk.session.promptAsync({
+              sessionID,
+              agent: "build",
+              noReply: true,
+              parts: [{ type: "text", text: "async hello" }],
+            }),
+          )
+          const messages = yield* pollWithTimeout(
+            capture(() => sdk.session.messages({ sessionID })).pipe(
+              Effect.map((messages) => (texts(messages.data).includes("async hello") ? messages : undefined)),
+            ),
+            "async no-reply prompt message was not persisted",
+          )
 
-        return {
-          statuses: statuses({ session, prompt, asyncPrompt, messages }),
-          promptRole: record(record(prompt.data).info).role,
-          messageCount: array(messages.data).length,
-          messageTexts: texts(messages.data).sort(),
-        }
-        // cssltdcode_change end
-      }),
+          return {
+            statuses: statuses({ session, prompt, asyncPrompt, messages }),
+            promptRole: record(record(prompt.data).info).role,
+            messageCount: array(messages.data).length,
+            messageTexts: texts(messages.data).sort(),
+          }
+          // cssltdcode_change end
+        }),
     ),
   )
 
   // cssltdcode_change start - verify invalid user images fail at the real SDK boundary
+  // (also needs a configured provider — see the noReply comment above)
   serverPathParity("rejects malformed user image data before persistence", (serverPath) =>
-    withStandardProject(serverPath, ({ sdk }) =>
-      Effect.gen(function* () {
-        const session = yield* capture(() => sdk.session.create({ title: "invalid image" }))
-        const sessionID = String(record(session.data).id)
-        const prompt = yield* capture(() =>
-          sdk.session.prompt({
-            sessionID,
-            agent: "build",
-            noReply: true,
-            parts: [
-              {
-                type: "file",
-                mime: "image/png",
-                filename: "not-an-image.png",
-                url: "data:image/png;base64,bm90LWltYWdl",
-              },
-            ],
-          }),
-        )
-        const messages = yield* capture(() => sdk.session.messages({ sessionID }))
+    withProject(
+      serverPath,
+      { setup: writeStandardFiles, config: testProviderConfig("http://localhost:1/v1") },
+      ({ sdk }) =>
+        Effect.gen(function* () {
+          const session = yield* capture(() => sdk.session.create({ title: "invalid image" }))
+          const sessionID = String(record(session.data).id)
+          const prompt = yield* capture(() =>
+            sdk.session.prompt({
+              sessionID,
+              agent: "build",
+              noReply: true,
+              parts: [
+                {
+                  type: "file",
+                  mime: "image/png",
+                  filename: "not-an-image.png",
+                  url: "data:image/png;base64,bm90LWltYWdl",
+                },
+              ],
+            }),
+          )
+          const messages = yield* capture(() => sdk.session.messages({ sessionID }))
 
-        expect(prompt.status).toBe(400)
-        expect(JSON.stringify(messages.data)).not.toContain("not-an-image.png")
+          expect(prompt.status).toBe(400)
+          expect(JSON.stringify(messages.data)).not.toContain("not-an-image.png")
 
-        return {
-          promptStatus: prompt.status,
-          persisted: JSON.stringify(messages.data).includes("not-an-image.png"),
-        }
-      }),
+          return {
+            promptStatus: prompt.status,
+            persisted: JSON.stringify(messages.data).includes("not-an-image.png"),
+          }
+        }),
     ),
   )
+  // (also needs a configured provider — see the noReply comment above)
   serverPathParity("rejects oversized user image files before persistence", (serverPath) =>
-    withProject(serverPath, { config: { attachment: { image: { max_base64_bytes: 4 } } } }, ({ sdk, directory }) =>
-      Effect.gen(function* () {
-        const filepath = path.join(directory, "oversized.png")
-        yield* call(() => Bun.write(filepath, Buffer.alloc(1024, 1)))
-        const session = yield* capture(() => sdk.session.create({ title: "oversized image" }))
-        const sessionID = String(record(session.data).id)
-        const prompt = yield* capture(() =>
-          sdk.session.prompt({
-            sessionID,
-            agent: "build",
-            noReply: true,
-            parts: [
-              {
-                type: "file",
-                mime: "image/png",
-                filename: "oversized.png",
-                url: `file://${filepath}`,
-              },
-            ],
-          }),
-        )
-        const messages = yield* capture(() => sdk.session.messages({ sessionID }))
+    withProject(
+      serverPath,
+      { config: { ...testProviderConfig("http://localhost:1/v1"), attachment: { image: { max_base64_bytes: 4 } } } },
+      ({ sdk, directory }) =>
+        Effect.gen(function* () {
+          const filepath = path.join(directory, "oversized.png")
+          yield* call(() => Bun.write(filepath, Buffer.alloc(1024, 1)))
+          const session = yield* capture(() => sdk.session.create({ title: "oversized image" }))
+          const sessionID = String(record(session.data).id)
+          const prompt = yield* capture(() =>
+            sdk.session.prompt({
+              sessionID,
+              agent: "build",
+              noReply: true,
+              parts: [
+                {
+                  type: "file",
+                  mime: "image/png",
+                  filename: "oversized.png",
+                  url: `file://${filepath}`,
+                },
+              ],
+            }),
+          )
+          const messages = yield* capture(() => sdk.session.messages({ sessionID }))
 
-        expect(prompt.status).toBe(400)
-        expect(JSON.stringify(messages.data)).not.toContain("oversized.png")
+          expect(prompt.status).toBe(400)
+          expect(JSON.stringify(messages.data)).not.toContain("oversized.png")
 
-        return { promptStatus: prompt.status, persisted: JSON.stringify(messages.data).includes("oversized.png") }
-      }),
+          return { promptStatus: prompt.status, persisted: JSON.stringify(messages.data).includes("oversized.png") }
+        }),
     ),
   )
   // cssltdcode_change end

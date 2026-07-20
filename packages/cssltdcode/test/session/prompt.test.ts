@@ -1078,6 +1078,13 @@ noLLMServer.instance("prompt tools replace matching rules and preserve existing 
     expect(Permission.evaluate("bash", "anything", reloaded.permission ?? []).action).toBe("deny")
     // cssltdcode_change end
   }),
+  // cssltdcode_change - prompt() resolves a default model even for noReply turns; without a
+  // configured provider this throws NoProvidersError in the hermetic test environment instead
+  // of exercising the permission-merging behavior under test. The extended timeout covers the
+  // two sequential prompt() calls each paying the cssltd/apertis catalog fetch's network-retry
+  // latency during provider-state construction.
+  { config: cfg },
+  10_000,
 )
 
 it.instance(
