@@ -5,11 +5,21 @@ import { Installation } from "@/installation"
 import { InstallationVersion } from "@cssltdcode/core/installation/version"
 import { GlobalBus } from "@/bus/global"
 
+// cssltdcode_change start - INACTIVE: no release channel exists yet (no npm
+// package, GitHub Releases, Homebrew/Choco/Scoop — see README.md "Install").
+// This whole auto-update path is scaffolding for once a real channel exists;
+// until then it must stay a guaranteed no-op rather than silently probing
+// registries. Do not remove this guard without first wiring up a real,
+// published distribution channel in `@/installation`.
+const RELEASE_CHANNEL_CONFIGURED = false
+// cssltdcode_change end
+
 export async function upgrade() {
+  if (!RELEASE_CHANNEL_CONFIGURED) return
   const config = await AppRuntime.runPromise(Config.Service.use((cfg) => cfg.getGlobal()))
   if (config.autoupdate === false || Flag.CSSLTD_DISABLE_AUTOUPDATE) return
   const method = await Installation.method()
-  // cssltdcode_change start - only auto-upgrade for npm/yarn/pnpm/bun (we only publish @cssltdcode/cli via npm registry)
+  // cssltdcode_change start - only auto-upgrade for npm/yarn/pnpm/bun
   if (method !== "npm" && method !== "yarn" && method !== "pnpm" && method !== "bun") return
   // cssltdcode_change end
   const latest = await Installation.latest(method).catch(() => {})

@@ -5,6 +5,22 @@ import { Script } from "@cssltdcode/script"
 import { fileURLToPath } from "url"
 import { NpmPublish } from "./cssltdcode/npm-publish" // cssltdcode_change
 
+// cssltdcode_change start - INACTIVE: this really does run `npm publish`
+// against the real public npm registry using whatever credentials are
+// logged in locally. No real @cssltdcode/cli npm package/org exists yet (see
+// README.md "Install"), so running this is not a dry run — it would attempt
+// to publish under someone's personal npm identity. Refuse to run unless
+// explicitly acknowledged.
+if (process.env.CSSLTD_ALLOW_PUBLISH !== "1") {
+  console.error(
+    "Refusing to run: no real npm release channel exists yet for @cssltdcode/cli.\n" +
+      "This script runs `npm publish` for real. Set CSSLTD_ALLOW_PUBLISH=1 to override once a\n" +
+      "real publish channel is provisioned.",
+  )
+  process.exit(1)
+}
+// cssltdcode_change end
+
 const dir = fileURLToPath(new URL("..", import.meta.url))
 process.chdir(dir)
 

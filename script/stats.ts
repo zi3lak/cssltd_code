@@ -1,5 +1,21 @@
 #!/usr/bin/env bun
 
+// cssltdcode_change start - INACTIVE: fetches release/download stats from
+// Cssltd-Org/cssltdcode and cssltdcode-ai on npm, neither of which exists
+// (see README.md "Install" — no release channel is provisioned yet), and
+// optionally reports them to PostHog if POSTHOG_KEY is set. Currently
+// harmless because fetchReleases() throws on the 404 before reaching
+// sendToPostHog, but don't "fix" this by repointing the URLs without first
+// deciding whether download telemetry should be sent at all.
+if (process.env.CSSLTD_ALLOW_STATS !== "1") {
+  console.error(
+    "Refusing to run: no real release channel exists yet, so there are no download stats to\n" +
+      "fetch. Set CSSLTD_ALLOW_STATS=1 to override once a real channel is provisioned.",
+  )
+  process.exit(1)
+}
+// cssltdcode_change end
+
 async function sendToPostHog(event: string, properties: Record<string, any>) {
   const key = process.env["POSTHOG_KEY"]
 

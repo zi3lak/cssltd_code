@@ -1,9 +1,12 @@
 import type { Argv } from "yargs"
 import { UI } from "../ui"
 import * as prompts from "@clack/prompts"
-import { Installation } from "../../installation"
-import { InstallationVersion } from "@cssltdcode/core/installation/version"
 
+// cssltdcode_change start - INACTIVE: no release channel exists yet (no npm
+// package, GitHub Releases, Homebrew/Choco/Scoop — see README.md "Install").
+// This command used to probe package-manager registries via `Installation`
+// (packages/cssltdcode/src/installation); until a real channel is published,
+// fail fast with a clear message instead of hitting nonexistent endpoints.
 export const UpgradeCommand = {
   command: "upgrade [target]",
   describe: "upgrade cssltd to the latest or a specific version", // cssltdcode_change
@@ -20,58 +23,16 @@ export const UpgradeCommand = {
         choices: ["curl", "npm", "yarn", "pnpm", "bun", "brew", "choco", "scoop"], // cssltdcode_change
       })
   },
-  handler: async (args: { target?: string; method?: string }) => {
+  handler: async () => {
     UI.empty()
     UI.println(UI.logo("  "))
     UI.empty()
     prompts.intro("Upgrade")
-    const detectedMethod = await Installation.method()
-    const method = (args.method as Installation.Method) ?? detectedMethod
-    if (method === "unknown") {
-      prompts.log.error(`cssltd is installed to ${process.execPath} and may be managed by a package manager`) // cssltdcode_change
-      const install = await prompts.select({
-        message: "Install anyways?",
-        options: [
-          { label: "Yes", value: true },
-          { label: "No", value: false },
-        ],
-        initialValue: false,
-      })
-      if (!install) {
-        prompts.outro("Done")
-        return
-      }
-    }
-    prompts.log.info("Using method: " + method)
-    const target = args.target ? args.target.replace(/^v/, "") : await Installation.latest(method) // cssltdcode_change
-
-    if (InstallationVersion === target) {
-      prompts.log.warn(`cssltd upgrade skipped: ${target} is already installed`) // cssltdcode_change
-      prompts.outro("Done")
-      return
-    }
-
-    prompts.log.info(`From ${InstallationVersion} → ${target}`)
-    const spinner = prompts.spinner()
-    spinner.start("Upgrading...")
-    const err = await Installation.upgrade(method, target).catch((err) => err)
-    if (err) {
-      spinner.stop("Upgrade failed", 1)
-      if (err instanceof Installation.UpgradeFailedError) {
-        // cssltdcode_change start - removed choco special case
-        prompts.log.error(err.stderr)
-        // necessary because choco only allows install/upgrade in elevated terminals
-        // if (method === "choco" && err.stderr.includes("not running from an elevated command shell")) {
-        //   prompts.log.error("Please run the terminal as Administrator and try again")
-        // } else {
-        //   prompts.log.error(err.stderr)
-        // }
-        // cssltdcode_change end
-      } else if (err instanceof Error) prompts.log.error(err.message)
-      prompts.outro("Done")
-      return
-    }
-    spinner.stop("Upgrade complete")
+    prompts.log.error(
+      "No release channel is configured yet. Rebuild from source instead:\n" +
+        "  bun install && cd packages/cssltdcode && bun run build",
+    )
     prompts.outro("Done")
   },
 }
+// cssltdcode_change end

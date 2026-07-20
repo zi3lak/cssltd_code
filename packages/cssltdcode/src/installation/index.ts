@@ -1,3 +1,13 @@
+// cssltdcode_change start - INACTIVE: no release channel exists yet (no npm
+// package, GitHub Releases, Homebrew/Choco/Scoop — see README.md "Install").
+// This service's `latest()`/`upgrade()` still query those nonexistent
+// endpoints; it is only reachable in practice because `Installation.method()`
+// resolves to "curl" or "unknown" for every currently-supported install path
+// (build from source, or `./install --binary`), which the callers in
+// cli/upgrade.ts and cli/cmd/upgrade.ts already special-case to a no-op /
+// clear error. Do not wire a new caller to `latest()`/`upgrade()` without
+// first publishing a real channel.
+// cssltdcode_change end
 import { LayerNode } from "@cssltdcode/core/effect/layer-node"
 import { httpClient } from "@cssltdcode/core/effect/layer-node-platform"
 import { Effect, Layer, Schema, Context, Stream } from "effect"
