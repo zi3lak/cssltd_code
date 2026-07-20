@@ -27,9 +27,6 @@
     "packages/core": {
       "name": "@cssltdcode/core",
       "version": "7.4.11",
-      "bin": {
-        "cssltdcode": "./bin/opencode",
-      },
       "dependencies": {
         "@ai-sdk/alibaba": "1.0.17",
         "@ai-sdk/amazon-bedrock": "4.0.112",

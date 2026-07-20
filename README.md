@@ -26,6 +26,14 @@ Core principles:
   (`http://localhost:11434`, configurable via `CSSLTD_OLLAMA_URL` or `OLLAMA_HOST`),
   all installed models appear in the model list with no configuration required.
 
+## Versioning
+
+CSSLTD Code has its own product version — currently **1.0.0** (see the root `package.json`),
+independent of the internal package versions under `packages/*`. The upstream opencode release
+this fork last merged from is tracked separately in [`.cssltdcode-version`](.cssltdcode-version)
+(currently `v1.17.4`) and is used only by the upstream-merge tooling in `script/upstream/` — it is
+not the product version.
+
 ## Quick start
 
 Requirements: [bun](https://bun.sh) `1.3.x`.
