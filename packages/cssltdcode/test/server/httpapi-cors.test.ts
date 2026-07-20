@@ -71,14 +71,14 @@ describe("HttpApi CORS", () => {
       const response = yield* Effect.promise(() =>
         handler(
           new Request(new URL("/global/config", "http://localhost"), {
-            headers: { origin: "https://app.cssltdcode.ai" },
+            headers: { origin: "https://app.cssltd.ai" },
           }),
           HttpApiApp.context,
         ),
       )
 
       expect(response.status).toBe(401)
-      expect(response.headers.get("access-control-allow-origin")).toBe("https://app.cssltdcode.ai")
+      expect(response.headers.get("access-control-allow-origin")).toBe("https://app.cssltd.ai")
     }),
   )
 

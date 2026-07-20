@@ -7,6 +7,10 @@ import { Context, Effect, Layer } from "effect"
 import { AI_SDK_PROVIDERS, CSSLTD_OPENROUTER_BASE, PROMPTS } from "@cssltdcode/cssltd-gateway"
 import { overlay } from "@/cssltdcode/anaconda-desktop/provider"
 import { LayerNode } from "@cssltdcode/core/effect/layer-node"
+import { fetchOllamaCapabilities } from "@cssltdcode/core/plugin/provider/ollama-capabilities"
+
+const OLLAMA_DEFAULT_CONTEXT = 32768
+const OLLAMA_DEFAULT_OUTPUT = 8192
 
 export const Model = Core.Model
 export type Model = Core.Model
@@ -86,6 +90,9 @@ export const layer: Layer.Layer<Service, never, Core.Service | Config.Service | 
             .map((m) => m.name ?? m.model)
             .filter((name): name is string => typeof name === "string" && name.length > 0)
           if (names.length === 0) return
+          const capabilities = yield* Effect.promise(() =>
+            Promise.all(names.map((name) => fetchOllamaCapabilities(base, name))),
+          )
           providers.ollama = {
             id: "ollama",
             name: "Ollama (local)",
@@ -93,21 +100,27 @@ export const layer: Layer.Layer<Service, never, Core.Service | Config.Service | 
             api: `${base}/v1`,
             npm: "@ai-sdk/openai-compatible",
             models: Object.fromEntries(
-              names.map((name) => [
-                name,
-                {
-                  id: name,
+              names.map((name, i) => {
+                const caps = capabilities[i]
+                return [
                   name,
-                  release_date: "",
-                  attachment: false,
-                  reasoning: false,
-                  temperature: true,
-                  tool_call: true,
-                  cost: { input: 0, output: 0 },
-                  limit: { context: 32768, output: 8192 },
-                  modalities: { input: ["text" as const], output: ["text" as const] },
-                },
-              ]),
+                  {
+                    id: name,
+                    name,
+                    release_date: "",
+                    attachment: caps.vision,
+                    reasoning: false,
+                    temperature: true,
+                    tool_call: caps.tools,
+                    cost: { input: 0, output: 0 },
+                    limit: { context: caps.context ?? OLLAMA_DEFAULT_CONTEXT, output: caps.output ?? OLLAMA_DEFAULT_OUTPUT },
+                    modalities: {
+                      input: caps.vision ? (["text", "image"] as const) : (["text"] as const),
+                      output: ["text" as const],
+                    },
+                  },
+                ]
+              }),
             ),
           }
         })

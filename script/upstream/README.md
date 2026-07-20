@@ -69,7 +69,7 @@ After merging upstream cssltdcode releases, use `cssltdcode-changesets.ts` to tu
 bun script/upstream/cssltdcode-changesets.ts --from 1.17.0 --to 1.17.7
 ```
 
-The script fetches releases from `anomalyco/cssltdcode`, selects published releases in the semver range `(from, to]`, and writes one `.changeset/cssltdcode-vX-Y-Z-to-vX-Y-Z.md` file for the whole range. It requires the target release to exist, merges notes from every release into shared `##` sections and `###` categories, then folds those headings into each bullet (for example, `Core Bugfixes: ...`) so Changesets can embed the notes cleanly in package changelogs. It generates a patch changeset for the fixed release group, `@cssltdcode/cli` and `cssltd-code`. Generated notes omit contributor thank-you blocks and the upstream `Desktop` and `SDK` sections by default because Cssltd does not ship the cssltdcode desktop app and SDK release notes are not user-facing for Cssltd.
+The script fetches releases from `anomalyco/opencode`, selects published releases in the semver range `(from, to]`, and writes one `.changeset/cssltdcode-vX-Y-Z-to-vX-Y-Z.md` file for the whole range. It requires the target release to exist, merges notes from every release into shared `##` sections and `###` categories, then folds those headings into each bullet (for example, `Core Bugfixes: ...`) so Changesets can embed the notes cleanly in package changelogs. It generates a patch changeset for the fixed release group, `@cssltdcode/cli` and `cssltd-code`. Generated notes omit contributor thank-you blocks and the upstream `Desktop` and `SDK` sections by default because Cssltd does not ship the cssltdcode desktop app and SDK release notes are not user-facing for Cssltd.
 
 ## Merge Process
 
@@ -406,7 +406,7 @@ Edit `transforms/package-names.ts` and add patterns to `PACKAGE_PATTERNS`.
 ### "No upstream remote found"
 
 ```bash
-git remote add upstream git@github.com:anomalyco/cssltdcode.git
+git remote add upstream git@github.com:anomalyco/opencode.git
 ```
 
 ### "Working directory has uncommitted changes"

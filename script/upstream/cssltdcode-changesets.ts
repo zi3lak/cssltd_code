@@ -22,7 +22,7 @@ type Opts = {
 
 type Group = Map<string, Map<string, string[]>>
 
-const repo = "anomalyco/cssltdcode"
+const repo = "anomalyco/opencode"
 const pkgs = ["@cssltdcode/cli", "cssltd-code"]
 const bump: Bump = "patch"
 const drop = ["Desktop", "SDK"]

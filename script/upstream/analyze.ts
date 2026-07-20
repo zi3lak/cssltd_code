@@ -60,7 +60,7 @@ async function main() {
   // Check upstream remote
   if (!(await git.hasUpstreamRemote())) {
     error("No 'upstream' remote found. Please add it:")
-    info("  git remote add upstream git@github.com:anomalyco/cssltdcode.git")
+    info("  git remote add upstream git@github.com:anomalyco/opencode.git")
     process.exit(1)
   }
 

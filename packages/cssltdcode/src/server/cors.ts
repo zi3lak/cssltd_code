@@ -1,8 +1,6 @@
 import * as CssltdServer from "@/cssltdcode/server/server" // cssltdcode_change
 import { Context } from "effect"
 
-const cssltdcodeOrigin = /^https:\/\/([a-z0-9-]+\.)*cssltdcode\.ai$/
-
 export type CorsOptions = { readonly cors?: ReadonlyArray<string> }
 
 export const CorsConfig = Context.Reference<CorsOptions | undefined>("@cssltdcode/ServerCorsConfig", {
@@ -16,7 +14,6 @@ export function isAllowedCorsOrigin(input: string | undefined, opts?: CorsOption
   if (input.startsWith("oc://renderer")) return true
   if (input === "tauri://localhost" || input === "http://tauri.localhost" || input === "https://tauri.localhost")
     return true
-  if (cssltdcodeOrigin.test(input)) return true
   // cssltdcode_change start
   if (CssltdServer.corsOrigin(input)) return true
   // cssltdcode_change end

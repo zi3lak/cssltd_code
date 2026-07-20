@@ -3,8 +3,8 @@ import { resolveCssltdGatewayBaseUrl, resolveCssltdOpenRouterBaseUrl } from "../
 
 describe("Cssltd API URL resolvers", () => {
   test("resolves production route bases", () => {
-    expect(resolveCssltdGatewayBaseUrl()).toBe("https://api.cssltd.ai/api/gateway/")
-    expect(resolveCssltdOpenRouterBaseUrl()).toBe("https://api.cssltd.ai/api/openrouter/")
+    expect(resolveCssltdGatewayBaseUrl()).toBe("https://gateway.cssltd.internal/api/gateway/")
+    expect(resolveCssltdOpenRouterBaseUrl()).toBe("https://gateway.cssltd.internal/api/openrouter/")
   })
 
   test("normalizes root API base overrides", () => {

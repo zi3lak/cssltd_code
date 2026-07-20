@@ -2,6 +2,10 @@ import { Effect } from "effect"
 import { PluginV2 } from "../../plugin"
 import { ProviderV2 } from "../../provider"
 import { ModelV2 } from "../../model"
+import { fetchOllamaCapabilities } from "./ollama-capabilities"
+
+const DEFAULT_CONTEXT = 32768
+const DEFAULT_OUTPUT = 8192
 
 const id = ProviderV2.ID.make("ollama")
 
@@ -58,16 +62,20 @@ export const OllamaPlugin = PluginV2.define({
           provider.request.body.apiKey = provider.request.body.apiKey ?? "ollama"
           if (!provider.enabled) provider.enabled = { via: "custom", data: { local: true } }
         })
-        for (const name of detected.models) {
+        const capabilities = yield* Effect.promise(() =>
+          Promise.all(detected.models.map((name) => fetchOllamaCapabilities(detected.base, name))),
+        )
+        detected.models.forEach((name, i) => {
+          const caps = capabilities[i]
           evt.model.update(id, ModelV2.ID.make(name), (model) => {
             model.name = name
-            model.capabilities.tools = true
-            model.capabilities.input = ["text"]
+            model.capabilities.tools = caps.tools
+            model.capabilities.input = caps.vision ? ["text", "image"] : ["text"]
             model.capabilities.output = ["text"]
-            if (model.limit.context === 0) model.limit.context = 32768
-            if (model.limit.output === 0) model.limit.output = 8192
+            if (model.limit.context === 0) model.limit.context = caps.context ?? DEFAULT_CONTEXT
+            if (model.limit.output === 0) model.limit.output = caps.output ?? DEFAULT_OUTPUT
           })
-        }
+        })
       }),
     }
   }),

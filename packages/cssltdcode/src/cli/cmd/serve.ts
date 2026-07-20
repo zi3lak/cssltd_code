@@ -5,6 +5,14 @@ import { Flag } from "@cssltdcode/core/flag/flag"
 import { InstanceRuntime } from "../../project/instance-runtime" // cssltdcode_change
 import { startParentWatchdog } from "../../cssltdcode/parent-watchdog" // cssltdcode_change
 
+// cssltdcode_change start - fail-closed non-loopback binding
+const LOOPBACK_HOSTNAMES = new Set(["127.0.0.1", "localhost", "::1", "[::1]"])
+
+function isLoopbackHostname(hostname: string) {
+  return LOOPBACK_HOSTNAMES.has(hostname.toLowerCase())
+}
+// cssltdcode_change end
+
 export const ServeCommand = effectCmd({
   command: "serve",
   builder: (yargs) => withNetworkOptions(yargs),
@@ -14,10 +22,24 @@ export const ServeCommand = effectCmd({
   instance: false, // cssltdcode_change
   handler: Effect.fn("Cli.serve")(function* (args) {
     const { Server } = yield* Effect.promise(() => import("../../server/server"))
+    const opts = yield* resolveNetworkOptions(args)
+    // cssltdcode_change start - refuse to start unauthenticated on a
+    // non-loopback interface (e.g. via --mdns, --hostname, or config) since
+    // the API exposes shell execution, PTY creation, and permission
+    // approval to anyone who can reach the port
+    if (!Flag.CSSLTD_SERVER_PASSWORD && !isLoopbackHostname(opts.hostname)) {
+      console.error(
+        `Error: refusing to start on ${opts.hostname} without CSSLTD_SERVER_PASSWORD set.\n` +
+          `Binding to a non-loopback interface exposes shell execution, PTY creation, and\n` +
+          `permission approval to your network. Set CSSLTD_SERVER_PASSWORD or bind to\n` +
+          `127.0.0.1 / localhost instead.`,
+      )
+      process.exit(1)
+    }
     if (!Flag.CSSLTD_SERVER_PASSWORD) {
       console.log("Warning: CSSLTD_SERVER_PASSWORD is not set; server is unsecured.")
     }
-    const opts = yield* resolveNetworkOptions(args)
+    // cssltdcode_change end
     const server = yield* Effect.promise(() => Server.listen(opts))
 
     // cssltdcode_change start

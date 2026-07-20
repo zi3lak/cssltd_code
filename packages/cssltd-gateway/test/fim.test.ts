@@ -6,12 +6,12 @@ describe("FIM target resolution", () => {
     expect(resolveFimTarget("cssltd", "mistralai/codestral-2508")).toEqual({
       provider: "cssltd",
       model: "mistralai/codestral-2508",
-      url: "https://api.cssltd.ai/api/fim/completions",
+      url: "https://gateway.cssltd.internal/api/fim/completions",
     })
     expect(resolveFimTarget("cssltd", "inception/mercury-edit-2")).toEqual({
       provider: "cssltd",
       model: "inception/mercury-edit-2",
-      url: "https://api.cssltd.ai/api/fim/completions",
+      url: "https://gateway.cssltd.internal/api/fim/completions",
     })
   })
 
@@ -31,22 +31,22 @@ describe("FIM target resolution", () => {
     expect(resolveFimTarget()).toEqual({
       provider: "cssltd",
       model: "mistralai/codestral-2501",
-      url: "https://api.cssltd.ai/api/fim/completions",
+      url: "https://gateway.cssltd.internal/api/fim/completions",
     })
     expect(resolveFimTarget(undefined, "mistralai/codestral-2508")).toEqual({
       provider: "cssltd",
       model: "mistralai/codestral-2508",
-      url: "https://api.cssltd.ai/api/fim/completions",
+      url: "https://gateway.cssltd.internal/api/fim/completions",
     })
     expect(resolveFimTarget(undefined, "inception/mercury-edit")).toEqual({
       provider: "cssltd",
       model: "inception/mercury-edit",
-      url: "https://api.cssltd.ai/api/fim/completions",
+      url: "https://gateway.cssltd.internal/api/fim/completions",
     })
     expect(resolveFimTarget("cssltd", "custom/fim-model")).toEqual({
       provider: "cssltd",
       model: "custom/fim-model",
-      url: "https://api.cssltd.ai/api/fim/completions",
+      url: "https://gateway.cssltd.internal/api/fim/completions",
     })
   })
 })

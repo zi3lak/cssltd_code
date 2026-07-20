@@ -12,7 +12,7 @@ import { warn, info } from "./logger"
 import { compareVersions, parseVersion, type VersionInfo } from "./version"
 import { isAncestor } from "./git"
 
-const url = "https://github.com/anomalyco/cssltdcode.git"
+const url = "https://github.com/anomalyco/opencode.git"
 const workflows = [".github/workflows/publish.yml", ".github/workflows/beta.yml"]
 
 /**

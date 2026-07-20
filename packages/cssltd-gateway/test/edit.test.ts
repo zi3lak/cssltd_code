@@ -35,7 +35,7 @@ describe("Edit target resolution", () => {
     expect(resolveEditTarget()).toEqual({
       provider: "cssltd",
       model: "inception/mercury-edit-2",
-      url: "https://api.cssltd.ai/api/edit/completions",
+      url: "https://gateway.cssltd.internal/api/edit/completions",
     })
   })
 })

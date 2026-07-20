@@ -18,10 +18,15 @@ providers) as well as **local models via Ollama** — without sending any code o
 
 Core principles:
 
-- **Zero telemetry by default.** No data leaves the machine. Optional company analytics are only
-  enabled via `CSSLTD_TELEMETRY_HOST` + `CSSLTD_TELEMETRY_KEY`.
-- **No third-party cloud login.** The company model gateway is opt-in via
-  `CSSLTD_API_URL` / `CSSLTD_API_KEY`; without it, each engineer uses their own API keys or Ollama.
+- **No telemetry unless explicitly configured; your code is sent only to the model provider you
+  select.** Usage analytics are dead by default and only activate via `CSSLTD_TELEMETRY_HOST` +
+  `CSSLTD_TELEMETRY_KEY`. Two background network calls happen regardless of provider choice: a
+  public model-catalog refresh from `models.dev` (disable with `CSSLTD_DISABLE_MODELS_FETCH=1`),
+  and a metadata-only lookup of the company gateway's free models (disable by adding `"cssltd"` to
+  `disabled_providers` in your config). Neither sends session content.
+- **No third-party cloud login required for inference.** Using the company model gateway for
+  actual completions is opt-in via `CSSLTD_API_URL` / `CSSLTD_API_KEY`; without it, each engineer
+  uses their own API keys or Ollama.
 - **Local Ollama is auto-detected.** If an Ollama server is running
   (`http://localhost:11434`, configurable via `CSSLTD_OLLAMA_URL` or `OLLAMA_HOST`),
   all installed models appear in the model list with no configuration required.
@@ -116,9 +121,16 @@ Latest full verification of `main` (2026-07-20):
 
 | Check | Result |
 |---|---|
-| CLI test suite (`bun run test`) | ✅ 587 / 587 test files passing (0 flaky) |
+| CLI test suite (`bun run test`) | ✅ 587 / 587 selected test files passing (0 flaky) |
 | Type check (`bun turbo typecheck`) | ✅ 17 / 17 packages |
-| Lint (`oxlint`) | ✅ 0 errors |
+| Lint (`oxlint`) | ✅ 0 errors (4.8k warnings) |
+
+"587 / 587" is the file-level pass count, not the number of individual test cases: `packages/cssltdcode/test`
+has 588 `.test.ts(x)` files, of which one (`mcp/oauth-browser.test.ts`) is permanently excluded by
+`script/test-runner.ts` because it binds a fixed OAuth callback port and races with other parallel
+OAuth tests in CI — see the `skipped` set in that file. Within the 587 that run, ~26 individual
+cases use `.skip`/`.skipIf`/`.todo` (mostly platform-specific behavior), so a fully green file can
+still contain a handful of intentionally-skipped cases.
 
 ## License
 
