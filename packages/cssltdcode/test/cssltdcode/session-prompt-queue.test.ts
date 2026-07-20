@@ -103,6 +103,32 @@ function hasText(msg: MessageV2.WithParts, text: string) {
   return msg.parts.some((part) => part.type === "text" && part.text.includes(text))
 }
 
+// cssltdcode_change - gives the "code" agent a resolvable model without depending on live
+// network reachability to the real cssltd/apertis catalogs (unavailable in CI); the baseURL is
+// never actually contacted since these tests only use noReply prompts.
+async function writeTestProviderConfig(dir: string) {
+  await Bun.write(
+    path.join(dir, "cssltdcode.json"),
+    JSON.stringify({
+      $schema: "https://cssltdcode.ai/config.json",
+      enabled_providers: ["alibaba"],
+      provider: {
+        alibaba: {
+          options: {
+            apiKey: "test-key",
+            baseURL: "http://localhost:1/v1",
+          },
+        },
+      },
+      agent: {
+        code: {
+          model: "alibaba/qwen-plus",
+        },
+      },
+    }),
+  )
+}
+
 function scoped<T>(dir: string, fn: (prompt: SessionPrompt.Interface) => Promise<T>) {
   return Effect.runPromise(
     SessionPrompt.Service.use((prompt) => Effect.promise(() => fn(prompt))).pipe(
@@ -745,7 +771,10 @@ describe("session prompt queue", () => {
   test("new prompt dismisses a pending suggestion", async () => {
     const shown = Promise.withResolvers<void>()
     const dismissed = Promise.withResolvers<void>()
-    await using tmp = await tmpdir({ git: true })
+    // cssltdcode_change - the replacement prompt below resolves a default model even though
+    // it's noReply; without a configured provider that legitimately throws NoProvidersError in
+    // the hermetic test environment instead of ever reaching the dismiss it's here to verify.
+    await using tmp = await tmpdir({ git: true, init: writeTestProviderConfig })
 
     await provideTestInstance({
       directory: tmp.path,
