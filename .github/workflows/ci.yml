@@ -32,6 +32,11 @@ jobs:
       # packages/cssltd-sandbox confines tool execution via bubblewrap (bwrap);
       # it's not present on the base ubuntu-latest image.
       - run: sudo apt-get update && sudo apt-get install -y bubblewrap
+      # Ubuntu 24.04 (current ubuntu-latest) blocks unprivileged user namespaces via
+      # AppArmor by default, which bwrap needs to create its sandbox; without this,
+      # every bwrap invocation fails with "setting up uid map: Permission denied"
+      # and every test that spawns a real subprocess through the sandbox fails.
+      - run: sudo sysctl -w kernel.apparmor_restrict_unprivileged_userns=0
       - run: bun install --frozen-lockfile
       - run: bun run test:ci
         working-directory: packages/cssltdcode
