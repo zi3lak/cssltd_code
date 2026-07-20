@@ -124,7 +124,7 @@ Latest full verification of `main` (2026-07-20):
 | CLI test suite (`bun run test`) | ✅ 587 / 587 selected test files passing on retry; a handful (e.g. `session-prompt-queue.test.ts`) are timing-sensitive and occasionally need the test-runner's built-in retry |
 | Type check (`bun turbo typecheck`) | ✅ 17 / 17 packages |
 | Lint (`oxlint`) | ✅ 0 errors (4.8k warnings) |
-| CI (`.github/workflows/ci.yml`) | Runs on every push/PR to `main` — check the Actions tab for current status |
+| CI (`.github/workflows/ci.yml`) | ✅ Green from a clean checkout — [run 29740489490](https://github.com/zi3lak/cssltd_code/actions/runs/29740489490), commit `1ef3798` |
 
 "587 / 587" is the file-level pass count, not the number of individual test cases: `packages/cssltdcode/test`
 has 588 `.test.ts(x)` files, of which one (`mcp/oauth-browser.test.ts`) is permanently excluded by
